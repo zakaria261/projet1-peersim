@@ -1,0 +1,674 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DHT sur PeerSim — Compte Rendu de Projet</title>
+<style>
+  :root {
+    --blue:#1a73e8; --dark:#0d1117; --surface:#161b22;
+    --border:#30363d; --text:#e6edf3; --muted:#8b949e;
+    --green:#3fb950; --orange:#f0883e; --purple:#bc8cff;
+    --red:#f85149; --yellow:#e3b341;
+  }
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;background:var(--dark);color:var(--text);line-height:1.7}
+  nav{position:fixed;top:0;left:0;right:0;z-index:100;background:rgba(13,17,23,.92);backdrop-filter:blur(8px);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:1.5rem;padding:.75rem 2rem}
+  nav .logo{font-weight:700;font-size:1rem;color:var(--blue);white-space:nowrap}
+  nav a{color:var(--muted);text-decoration:none;font-size:.85rem;transition:color .2s}
+  nav a:hover{color:var(--text)}
+  .hero{min-height:100vh;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;padding:6rem 2rem 4rem;background:radial-gradient(ellipse 80% 50% at 50% -10%,rgba(26,115,232,.18),transparent)}
+  .hero .badge{display:inline-block;background:rgba(26,115,232,.15);border:1px solid rgba(26,115,232,.4);color:var(--blue);border-radius:2rem;padding:.3rem 1rem;font-size:.8rem;letter-spacing:.05em;margin-bottom:1.5rem}
+  .hero h1{font-size:clamp(2rem,5vw,3.5rem);font-weight:800;line-height:1.2;background:linear-gradient(135deg,#fff 30%,var(--blue));-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:1rem}
+  .hero p{color:var(--muted);font-size:1.1rem;max-width:600px;margin:0 auto 2rem}
+  .hero .meta{display:flex;gap:2rem;justify-content:center;flex-wrap:wrap}
+  .hero .meta span{display:flex;align-items:center;gap:.4rem;color:var(--muted);font-size:.9rem}
+  .hero .meta strong{color:var(--text)}
+  section{padding:5rem 2rem;max-width:1100px;margin:0 auto}
+  section+section{border-top:1px solid var(--border)}
+  .section-label{font-size:.75rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--blue);margin-bottom:.5rem}
+  h2{font-size:clamp(1.6rem,3vw,2.2rem);font-weight:700;margin-bottom:1rem}
+  h3{font-size:1.2rem;font-weight:600;margin:2rem 0 .75rem;color:var(--orange)}
+  p{color:var(--muted);margin-bottom:1rem}
+  strong{color:var(--text)}
+  .grid{display:grid;gap:1.25rem}
+  .grid-2{grid-template-columns:repeat(auto-fit,minmax(280px,1fr))}
+  .grid-3{grid-template-columns:repeat(auto-fit,minmax(220px,1fr))}
+  .grid-4{grid-template-columns:repeat(auto-fit,minmax(180px,1fr))}
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:.75rem;padding:1.5rem;transition:border-color .2s,transform .2s}
+  .card:hover{border-color:var(--blue);transform:translateY(-2px)}
+  .card .icon{font-size:1.8rem;margin-bottom:.75rem}
+  .card h4{font-size:1rem;font-weight:600;margin-bottom:.5rem;color:var(--text)}
+  .card p{font-size:.9rem;color:var(--muted);margin:0}
+  .stat{background:var(--surface);border:1px solid var(--border);border-radius:.75rem;padding:1.5rem;text-align:center}
+  .stat .num{font-size:2.5rem;font-weight:800;color:var(--blue)}
+  .stat .label{font-size:.85rem;color:var(--muted);margin-top:.25rem}
+  .code-wrap{background:#0d1117;border:1px solid var(--border);border-radius:.75rem;overflow:hidden;margin:1.5rem 0}
+  .code-header{display:flex;align-items:center;justify-content:space-between;padding:.6rem 1rem;background:var(--surface);border-bottom:1px solid var(--border);font-size:.8rem;color:var(--muted)}
+  .code-header .dots{display:flex;gap:.4rem}
+  .code-header .dots span{width:12px;height:12px;border-radius:50%}
+  .dot-r{background:#ff5f57}.dot-y{background:#febc2e}.dot-g{background:#28c840}
+  pre{padding:1.25rem 1.5rem;overflow-x:auto;font-family:'SFMono-Regular','Cascadia Code',Consolas,monospace;font-size:.82rem;line-height:1.65}
+  .kw{color:#ff7b72}.cls{color:#ffa657}.fn{color:#d2a8ff}
+  .str{color:#a5d6ff}.cmt{color:#8b949e;font-style:italic}.num-lit{color:#79c0ff}
+  .ring-container{display:flex;justify-content:center;margin:2rem 0}
+  .ring-svg text{font-family:'SFMono-Regular',monospace}
+  .flow{display:flex;align-items:center;flex-wrap:wrap;gap:.5rem;margin:1.5rem 0}
+  .flow-step{background:var(--surface);border:1px solid var(--border);border-radius:.5rem;padding:.5rem 1rem;font-size:.85rem;color:var(--text);white-space:nowrap}
+  .flow-arrow{color:var(--blue);font-size:1.2rem}
+  .flow-step.highlight{border-color:var(--green);color:var(--green)}
+  .flow-step.action{border-color:var(--orange);color:var(--orange)}
+  table{width:100%;border-collapse:collapse;margin:1.5rem 0;font-size:.9rem}
+  th{background:var(--surface);color:var(--text);padding:.75rem 1rem;text-align:left;border-bottom:2px solid var(--border);font-weight:600}
+  td{padding:.65rem 1rem;border-bottom:1px solid var(--border);color:var(--muted)}
+  tr:hover td{background:rgba(255,255,255,.02)}
+  .badge-ok{color:var(--green);font-weight:700}
+  .badge-info{color:var(--blue);font-weight:700}
+  .timeline{position:relative;padding-left:2rem}
+  .timeline::before{content:'';position:absolute;left:.4rem;top:0;bottom:0;width:2px;background:var(--border)}
+  .tl-item{position:relative;margin-bottom:2rem}
+  .tl-dot{position:absolute;left:-1.7rem;top:.3rem;width:14px;height:14px;border-radius:50%;background:var(--blue);border:2px solid var(--dark)}
+  .tl-item h4{font-size:1rem;font-weight:600;color:var(--text);margin-bottom:.3rem}
+  .tl-item p{font-size:.9rem;margin:0}
+  .tl-time{font-size:.75rem;color:var(--blue);margin-bottom:.25rem}
+  .chart-wrap{background:var(--surface);border:1px solid var(--border);border-radius:.75rem;padding:1.5rem;margin:1.5rem 0}
+  canvas{display:block;width:100%!important}
+  .info-box{background:rgba(26,115,232,.08);border-left:3px solid var(--blue);border-radius:0 .5rem .5rem 0;padding:1rem 1.25rem;margin:1.5rem 0;font-size:.9rem;color:var(--muted)}
+  .info-box strong{color:var(--text)}
+  .warn-box{background:rgba(240,136,62,.08);border-left:3px solid var(--orange);border-radius:0 .5rem .5rem 0;padding:1rem 1.25rem;margin:1.5rem 0;font-size:.9rem;color:var(--muted)}
+  footer{border-top:1px solid var(--border);text-align:center;padding:2rem;color:var(--muted);font-size:.85rem}
+  ::-webkit-scrollbar{width:6px;height:6px}
+  ::-webkit-scrollbar-track{background:var(--dark)}
+  ::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+  @media(max-width:600px){nav a:nth-child(n+4){display:none}.flow{flex-direction:column;align-items:flex-start}}
+</style>
+</head>
+<body>
+
+<nav>
+  <span class="logo">DHT / PeerSim</span>
+  <a href="#intro">Introduction</a>
+  <a href="#step1">Étape 1</a>
+  <a href="#step2">Étape 2</a>
+  <a href="#step3">Étape 3</a>
+  <a href="#step4">Étape 4</a>
+  <a href="#perf">Performances</a>
+  <a href="#conclusion">Conclusion</a>
+</nav>
+
+<!-- HERO -->
+<div class="hero">
+  <div class="badge">Projet Systèmes Distribués · M1 Informatique</div>
+  <h1>Implémentation d'une DHT<br>au-dessus de PeerSim</h1>
+  <p>Conception et simulation d'une Table de Hachage Distribuée structurée en anneau,
+     avec routage, stockage répliqué et optimisation par piggybacking.</p>
+  <div class="meta">
+    <span>&#128100; <strong>Rahou Zakaria &amp; Abidi Amine</strong></span>
+    <span>&#128196; <strong>7 classes Java</strong></span>
+    <span>&#128279; <strong>4 étapes</strong> complètes</span>
+    <span>&#9989; <strong>Degré de réplication 3</strong></span>
+    <span>&#128200; <strong>O(log N)</strong> avec liens longs</span>
+  </div>
+</div>
+
+<!-- INTRO -->
+<section id="intro">
+  <div class="section-label">Contexte &amp; Architecture</div>
+  <h2>Présentation du projet</h2>
+  <p>L'objectif est de concevoir une <strong>DHT (Distributed Hash Table)</strong> simulée au-dessus
+     du framework <strong>PeerSim 1.0.5</strong>. Une DHT est un système de stockage décentralisé où
+     chaque nœud est responsable d'une portion de l'espace de clés, sans serveur central.
+     Le projet couvre la topologie en anneau, le routage de messages, le stockage répliqué
+     et l'optimisation du routage via des liens longs.</p>
+
+  <div class="grid grid-2" style="margin:2rem 0">
+    <div class="card">
+      <div class="icon">&#9889;</div>
+      <h4>Event-Driven Simulator (EDSimulator)</h4>
+      <p>Choix délibéré du mode <em>event-driven</em> de PeerSim plutôt que le mode cyclique,
+         pour modéliser fidèlement les communications asynchrones entre nœuds.</p>
+    </div>
+    <div class="card">
+      <div class="icon">&#128280;</div>
+      <h4>Topologie en anneau (Chord simplifié)</h4>
+      <p>Chaque nœud connaît uniquement ses voisins immédiats (prédécesseur et successeur)
+         dans un espace d'identifiants long (64 bits aléatoires).</p>
+    </div>
+    <div class="card">
+      <div class="icon">&#128230;</div>
+      <h4>Stockage distribué avec réplication</h4>
+      <p>Chaque donnée est stockée sur 3 nœuds : le responsable, son prédécesseur et son
+         successeur, garantissant la tolérance aux pannes.</p>
+    </div>
+    <div class="card">
+      <div class="icon">&#128640;</div>
+      <h4>Routage optimisé par piggybacking</h4>
+      <p>Apprentissage passif de nœuds distants via les en-têtes de messages transitant,
+         construisant progressivement une table de liens longs.</p>
+    </div>
+  </div>
+
+  <h3>Structure du projet</h3>
+  <table>
+    <thead><tr><th>Fichier</th><th>Rôle</th><th>Lignes</th></tr></thead>
+    <tbody>
+      <tr><td><code>DHTNode.java</code></td><td>Protocole principal — toute la logique DHT</td><td>~225</td></tr>
+      <tr><td><code>Message.java</code></td><td>Conteneur de messages (11 types)</td><td>~38</td></tr>
+      <tr><td><code>CustomInitializer.java</code></td><td>Bootstrap du réseau + planification des tests</td><td>~65</td></tr>
+      <tr><td><code>RingObserver.java</code></td><td>Diagnostic — validation intégrité de l'anneau</td><td>~49</td></tr>
+      <tr><td><code>LeaveControl.java</code></td><td>Déclencheur de départ propre</td><td>~15</td></tr>
+      <tr><td><code>SendControl.java</code></td><td>Test de routage point-à-point</td><td>~31</td></tr>
+      <tr><td><code>StorageControl.java</code></td><td>Tests PUT / GET avec machine à états</td><td>~50</td></tr>
+      <tr><td><code>conf/config.cfg</code></td><td>Paramètres PeerSim (10 nœuds, durée 1000)</td><td>~15</td></tr>
+    </tbody>
+  </table>
+
+  <div class="grid grid-4" style="margin-top:2rem">
+    <div class="stat"><div class="num">10</div><div class="label">Nœuds simulés</div></div>
+    <div class="stat"><div class="num">11</div><div class="label">Types de messages</div></div>
+    <div class="stat"><div class="num">3</div><div class="label">Degré de réplication</div></div>
+    <div class="stat"><div class="num">5</div><div class="label">Max liens longs / nœud</div></div>
+  </div>
+</section>
+
+<!-- STEP 1 -->
+<section id="step1">
+  <div class="section-label">Étape 1</div>
+  <h2>Construction de l'anneau — Join &amp; Leave</h2>
+  <p>La base d'une DHT est un espace d'identifiants organisé en anneau. Chaque nœud possède un
+     <strong>identifiant long aléatoire positif</strong> (64 bits). À l'initialisation, un seul
+     nœud existe et est son propre prédécesseur et successeur. Les autres nœuds rejoignent
+     progressivement via le mécanisme de <code>JOIN_REQUEST</code>.</p>
+
+  <div class="ring-container">
+    <svg class="ring-svg" viewBox="0 0 520 520" width="480" height="480">
+      <defs>
+        <marker id="arr" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L0,6 L8,3 z" fill="#1a73e8"/></marker>
+        <marker id="arr-green" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L0,6 L8,3 z" fill="#3fb950"/></marker>
+        <marker id="arr-red" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L0,6 L8,3 z" fill="#f85149"/></marker>
+      </defs>
+      <circle cx="260" cy="260" r="170" fill="none" stroke="#30363d" stroke-width="1.5" stroke-dasharray="6,4"/>
+      <g id="ring-nodes"></g>
+      <rect x="10" y="460" width="14" height="14" rx="3" fill="#1a73e8"/>
+      <text x="30" y="472" fill="#8b949e" font-size="12">Nœud actif</text>
+      <rect x="120" y="460" width="14" height="14" rx="3" fill="#f85149" opacity=".7"/>
+      <text x="140" y="472" fill="#8b949e" font-size="12">Nœud qui quitte</text>
+      <line x1="260" y1="462" x2="290" y2="462" stroke="#3fb950" stroke-width="2" marker-end="url(#arr-green)"/>
+      <text x="298" y="472" fill="#8b949e" font-size="12">Lien reformé</text>
+    </svg>
+  </div>
+
+  <h3>Processus de Join — routage step-by-step</h3>
+  <p>Le nouveau nœud envoie un <code>JOIN_REQUEST</code> au nœud de contact (Node 0). Chaque nœud
+     intermédiaire relaie la requête jusqu'à trouver l'intervalle correct. La condition d'insertion
+     gère le cas de <strong>dépassement (wraparound)</strong> de l'espace d'identifiants.</p>
+
+  <div class="flow">
+    <div class="flow-step">Nouveau nœud N</div><div class="flow-arrow">→</div>
+    <div class="flow-step">JOIN_REQUEST<br><small>→ Node 0 (contact)</small></div><div class="flow-arrow">→</div>
+    <div class="flow-step">Forwarding<br><small>succ à succ</small></div><div class="flow-arrow">→</div>
+    <div class="flow-step action">Nœud A trouve l'intervalle<br><small>pred.id &lt; N.id &lt; A.succ.id</small></div><div class="flow-arrow">→</div>
+    <div class="flow-step highlight">JOIN_ACCEPTED<br><small>+ UPDATE_PRED / UPDATE_SUCC</small></div>
+  </div>
+
+  <div class="code-wrap">
+    <div class="code-header">
+      <div class="dots"><span class="dot-r"></span><span class="dot-y"></span><span class="dot-g"></span></div>
+      <span>DHTNode.java — handleJoinRequest()</span><span></span>
+    </div>
+    <pre><span class="kw">private void</span> <span class="fn">handleJoinRequest</span>(<span class="cls">Node</span> myNode, <span class="kw">int</span> pid, <span class="cls">Message</span> msg) {
+    <span class="cls">Node</span> newNode = (<span class="cls">Node</span>) msg.content;
+    <span class="cls">DHTNode</span> newDHT = (<span class="cls">DHTNode</span>) newNode.<span class="fn">getProtocol</span>(pid);
+    <span class="cls">DHTNode</span> mySuccDHT = (<span class="cls">DHTNode</span>) <span class="kw">this</span>.succ.<span class="fn">getProtocol</span>(pid);
+
+    <span class="kw">boolean</span> inBetween = <span class="kw">false</span>;
+    <span class="kw">if</span> (<span class="kw">this</span>.id &lt; mySuccDHT.id) {
+        <span class="cmt">// Cas normal : (10, 20) → on cherche si newId ∈ ]10, 20[</span>
+        <span class="kw">if</span> (newDHT.id &gt; <span class="kw">this</span>.id &amp;&amp; newDHT.id &lt; mySuccDHT.id) inBetween = <span class="kw">true</span>;
+    } <span class="kw">else if</span> (<span class="kw">this</span>.id &gt; mySuccDHT.id) {
+        <span class="cmt">// Cas wraparound : (90, 10) → newId &gt; 90 OU newId &lt; 10</span>
+        <span class="kw">if</span> (newDHT.id &gt; <span class="kw">this</span>.id || newDHT.id &lt; mySuccDHT.id) inBetween = <span class="kw">true</span>;
+    } <span class="kw">else</span> {
+        inBetween = <span class="kw">true</span>; <span class="cmt">// Seul nœud dans l'anneau</span>
+    }
+
+    <span class="kw">if</span> (inBetween) {
+        <span class="cls">Node</span> oldSucc = <span class="kw">this</span>.succ;
+        <span class="kw">this</span>.succ = newNode;
+        <span class="cls">EDSimulator</span>.<span class="fn">add</span>(<span class="num-lit">1</span>, <span class="kw">new</span> <span class="cls">Message</span>(<span class="cls">Message</span>.JOIN_ACCEPTED,
+            <span class="kw">new</span> <span class="cls">Node</span>[]{myNode, oldSucc}, myNode), newNode, pid);
+        <span class="cls">EDSimulator</span>.<span class="fn">add</span>(<span class="num-lit">1</span>, <span class="kw">new</span> <span class="cls">Message</span>(<span class="cls">Message</span>.UPDATE_PRED,
+            newNode, myNode), oldSucc, pid);
+    } <span class="kw">else</span> {
+        <span class="cls">EDSimulator</span>.<span class="fn">add</span>(<span class="num-lit">1</span>, msg, <span class="kw">this</span>.succ, pid); <span class="cmt">// Forwarder</span>
+    }
+}</pre>
+  </div>
+
+  <h3>Processus de Leave — départ propre</h3>
+  <p>Le nœud sortant notifie ses deux voisins afin qu'ils rétablissent un lien direct entre eux.
+     L'anneau se <strong>referme automatiquement</strong> sans rupture de connectivité.</p>
+
+  <div class="flow">
+    <div class="flow-step action">Nœud N quitte</div><div class="flow-arrow">→</div>
+    <div class="flow-step">UPDATE_SUCC<br><small>→ pred(N)</small></div><div class="flow-arrow">+</div>
+    <div class="flow-step">UPDATE_PRED<br><small>→ succ(N)</small></div><div class="flow-arrow">→</div>
+    <div class="flow-step highlight">Anneau reformé<br><small>pred ↔ succ directs</small></div>
+  </div>
+
+  <div class="code-wrap">
+    <div class="code-header">
+      <div class="dots"><span class="dot-r"></span><span class="dot-y"></span><span class="dot-g"></span></div>
+      <span>DHTNode.java — leaveNetwork()</span><span></span>
+    </div>
+    <pre><span class="kw">public void</span> <span class="fn">leaveNetwork</span>(<span class="cls">Node</span> myNode, <span class="kw">int</span> pid) {
+    <span class="kw">if</span> (<span class="kw">this</span>.pred != <span class="kw">null</span> &amp;&amp; <span class="kw">this</span>.succ != <span class="kw">null</span>
+            &amp;&amp; <span class="kw">this</span>.pred != myNode &amp;&amp; <span class="kw">this</span>.succ != myNode) {
+        <span class="cls">EDSimulator</span>.<span class="fn">add</span>(<span class="num-lit">1</span>,
+            <span class="kw">new</span> <span class="cls">Message</span>(<span class="cls">Message</span>.UPDATE_SUCC, <span class="kw">this</span>.succ, myNode), <span class="kw">this</span>.pred, pid);
+        <span class="cls">EDSimulator</span>.<span class="fn">add</span>(<span class="num-lit">1</span>,
+            <span class="kw">new</span> <span class="cls">Message</span>(<span class="cls">Message</span>.UPDATE_PRED, <span class="kw">this</span>.pred, myNode), <span class="kw">this</span>.succ, pid);
+    }
+    <span class="kw">this</span>.pred = <span class="kw">null</span>;
+    <span class="kw">this</span>.succ = <span class="kw">null</span>;
+}</pre>
+  </div>
+
+  <div class="info-box">
+    <strong>Vérification : RingObserver</strong><br>
+    La classe <code>RingObserver</code> parcourt l'anneau en suivant les pointeurs <code>succ</code>
+    toutes les 200 unités de simulation. Elle détecte les anneaux brisés (<code>succ == null</code>)
+    et les boucles infinies (compteur &gt; 2 × Network.size).
+  </div>
+</section>
+
+<!-- STEP 2 -->
+<section id="step2">
+  <div class="section-label">Étape 2</div>
+  <h2>Routage de messages — Send &amp; Deliver</h2>
+  <p>Un nœud peut envoyer un message à destination d'un identifiant cible. Le message est
+     acheminé de proche en proche jusqu'au nœud <strong>responsable</strong> de cet identifiant,
+     c'est-à-dire le nœud dont l'ID est le plus proche supérieur ou égal à <code>targetId</code>.</p>
+
+  <h3>Règle de responsabilité</h3>
+  <div class="info-box">
+    Un nœud est <strong>responsable</strong> d'une clé <code>k</code> si et seulement si :
+    <code>pred.id &lt; k ≤ node.id</code> (avec gestion du wraparound lorsque <code>pred.id &gt; node.id</code>).
+  </div>
+
+  <div class="code-wrap">
+    <div class="code-header">
+      <div class="dots"><span class="dot-r"></span><span class="dot-y"></span><span class="dot-g"></span></div>
+      <span>DHTNode.java — handleRouting() — logique de responsabilité</span><span></span>
+    </div>
+    <pre><span class="kw">boolean</span> iAmResponsible = <span class="kw">false</span>;
+<span class="kw">if</span> (<span class="kw">this</span>.pred != <span class="kw">null</span>) {
+    <span class="cls">DHTNode</span> predDHT = (<span class="cls">DHTNode</span>) <span class="kw">this</span>.pred.<span class="fn">getProtocol</span>(pid);
+    <span class="kw">if</span> (predDHT.id &lt; <span class="kw">this</span>.id) {
+        <span class="kw">if</span> (targetId &gt; predDHT.id &amp;&amp; targetId &lt;= <span class="kw">this</span>.id) iAmResponsible = <span class="kw">true</span>;
+    } <span class="kw">else</span> {
+        <span class="cmt">// Wraparound (ex: pred.id=90, this.id=10)</span>
+        <span class="kw">if</span> (targetId &gt; predDHT.id || targetId &lt;= <span class="kw">this</span>.id) iAmResponsible = <span class="kw">true</span>;
+    }
+} <span class="kw">else</span> { iAmResponsible = <span class="kw">true</span>; }
+
+<span class="kw">if</span> (targetId == <span class="kw">this</span>.id || iAmResponsible) {
+    <span class="fn">handleStorageOrDelivery</span>(pid, msg, myNode);
+} <span class="kw">else</span> {
+    <span class="cls">EDSimulator</span>.<span class="fn">add</span>(<span class="num-lit">1</span>, msg, bestNextHop, pid);
+}</pre>
+  </div>
+
+  <h3>Types de messages définis</h3>
+  <table>
+    <thead><tr><th>Constante</th><th>Valeur</th><th>Usage</th></tr></thead>
+    <tbody>
+      <tr><td><code>JOIN_REQUEST</code></td><td>0</td><td>Demande de jointure de l'anneau</td></tr>
+      <tr><td><code>JOIN_ACCEPTED</code></td><td>1</td><td>Confirmation + [pred, succ] assignés</td></tr>
+      <tr><td><code>UPDATE_PRED</code></td><td>2</td><td>Mise à jour du prédécesseur</td></tr>
+      <tr><td><code>UPDATE_SUCC</code></td><td>3</td><td>Mise à jour du successeur</td></tr>
+      <tr><td><code>SEND_DATA</code></td><td>4</td><td>Envoi d'un message applicatif (routage)</td></tr>
+      <tr><td><code>PUT_DATA</code></td><td>6</td><td>Stockage d'une donnée dans la DHT</td></tr>
+      <tr><td><code>GET_DATA</code></td><td>7</td><td>Récupération d'une donnée</td></tr>
+      <tr><td><code>GET_REPLY</code></td><td>8</td><td>Réponse au GET avec la donnée trouvée</td></tr>
+      <tr><td><code>STORE_REPLICA</code></td><td>9</td><td>Copie de réplication vers voisins</td></tr>
+      <tr><td><code>LEAVE_NOTIFY</code></td><td>10</td><td>Déclenchement du départ propre</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Scénario de test — Routage (T=400)</h3>
+  <div class="timeline">
+    <div class="tl-item"><div class="tl-dot"></div><div class="tl-time">T = 400</div>
+      <h4>Node 2 envoie "Hello Routing" vers l'ID de Node 7</h4>
+      <p>Le message est créé avec <code>targetId = ID(Node 7)</code> et envoyé à Node 2.</p></div>
+    <div class="tl-item"><div class="tl-dot"></div><div class="tl-time">T = 401…</div>
+      <h4>[FORWARD] Hop par hop</h4>
+      <p>Chaque nœud intermédiaire logue <code>[FORWARD] Node X passe le relai au Node Y</code>.</p></div>
+    <div class="tl-item"><div class="tl-dot" style="background:var(--green)"></div><div class="tl-time">Arrivée</div>
+      <h4>&gt;&gt;&gt; DELIVER: Node 7 received message</h4>
+      <p>Node 7 reconnaît être le responsable de la clé et affiche la livraison en console.</p></div>
+  </div>
+</section>
+
+<!-- STEP 3 -->
+<section id="step3">
+  <div class="section-label">Étape 3</div>
+  <h2>Stockage distribué — Put &amp; Get avec réplication</h2>
+  <p>Chaque nœud dispose de deux <code>HashMap&lt;Long, Object&gt;</code> : <strong>dataStore</strong>
+     (données primaires) et <strong>replicaStore</strong> (copies secondaires). Après stockage primaire,
+     le nœud envoie une <code>STORE_REPLICA</code> à son prédécesseur et à son successeur,
+     garantissant un <strong>degré de réplication égal à 3</strong>.</p>
+
+  <h3>Schéma de réplication</h3>
+  <div style="display:flex;justify-content:center;margin:2rem 0">
+    <svg viewBox="0 0 620 200" width="580" height="200" style="max-width:100%">
+      <defs>
+        <marker id="ag2" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L0,6 L8,3 z" fill="#3fb950"/></marker>
+        <marker id="ao2" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L0,6 L8,3 z" fill="#f0883e"/></marker>
+      </defs>
+      <rect x="20" y="70" width="140" height="60" rx="10" fill="#161b22" stroke="#30363d" stroke-width="1.5"/>
+      <text x="90" y="98" text-anchor="middle" fill="#8b949e" font-size="12" font-family="monospace">Prédécesseur</text>
+      <text x="90" y="118" text-anchor="middle" fill="#3fb950" font-size="11" font-family="monospace">replicaStore</text>
+      <rect x="240" y="50" width="140" height="100" rx="10" fill="#161b22" stroke="#1a73e8" stroke-width="2"/>
+      <text x="310" y="88" text-anchor="middle" fill="#e6edf3" font-size="12" font-family="monospace" font-weight="bold">Responsable</text>
+      <text x="310" y="108" text-anchor="middle" fill="#1a73e8" font-size="11" font-family="monospace">dataStore</text>
+      <text x="310" y="128" text-anchor="middle" fill="#8b949e" font-size="10" font-family="monospace">(clé primaire)</text>
+      <rect x="460" y="70" width="140" height="60" rx="10" fill="#161b22" stroke="#30363d" stroke-width="1.5"/>
+      <text x="530" y="98" text-anchor="middle" fill="#8b949e" font-size="12" font-family="monospace">Successeur</text>
+      <text x="530" y="118" text-anchor="middle" fill="#3fb950" font-size="11" font-family="monospace">replicaStore</text>
+      <line x1="240" y1="105" x2="165" y2="105" stroke="#3fb950" stroke-width="1.5" marker-end="url(#ag2)"/>
+      <text x="202" y="98" text-anchor="middle" fill="#3fb950" font-size="10" font-family="monospace">STORE_REPLICA</text>
+      <line x1="380" y1="105" x2="455" y2="105" stroke="#3fb950" stroke-width="1.5" marker-end="url(#ag2)"/>
+      <text x="418" y="98" text-anchor="middle" fill="#3fb950" font-size="10" font-family="monospace">STORE_REPLICA</text>
+      <line x1="310" y1="20" x2="310" y2="50" stroke="#f0883e" stroke-width="2" marker-end="url(#ao2)"/>
+      <text x="310" y="15" text-anchor="middle" fill="#f0883e" font-size="12" font-family="monospace" font-weight="bold">PUT_DATA</text>
+      <text x="310" y="185" text-anchor="middle" fill="#8b949e" font-size="11" font-family="monospace">Degré de réplication = 3 (responsable + pred + succ)</text>
+    </svg>
+  </div>
+
+  <div class="code-wrap">
+    <div class="code-header">
+      <div class="dots"><span class="dot-r"></span><span class="dot-y"></span><span class="dot-g"></span></div>
+      <span>DHTNode.java — PUT avec réplication + GET avec fallback</span><span></span>
+    </div>
+    <pre><span class="cmt">// PUT : stockage primaire + réplication degré 3</span>
+<span class="kw">this</span>.dataStore.<span class="fn">put</span>(msg.targetId, msg.content);
+<span class="kw">if</span> (<span class="kw">this</span>.pred != <span class="kw">null</span> &amp;&amp; <span class="kw">this</span>.pred != myNode)
+    <span class="cls">EDSimulator</span>.<span class="fn">add</span>(<span class="num-lit">1</span>, <span class="kw">new</span> <span class="cls">Message</span>(<span class="cls">Message</span>.STORE_REPLICA, msg.content, <span class="kw">null</span>, msg.targetId), <span class="kw">this</span>.pred, pid);
+<span class="kw">if</span> (<span class="kw">this</span>.succ != <span class="kw">null</span> &amp;&amp; <span class="kw">this</span>.succ != myNode)
+    <span class="cls">EDSimulator</span>.<span class="fn">add</span>(<span class="num-lit">1</span>, <span class="kw">new</span> <span class="cls">Message</span>(<span class="cls">Message</span>.STORE_REPLICA, msg.content, <span class="kw">null</span>, msg.targetId), <span class="kw">this</span>.succ, pid);
+
+<span class="cmt">// GET : fallback sur replicaStore si dataStore vide</span>
+<span class="cls">Object</span> data = <span class="kw">this</span>.dataStore.<span class="fn">get</span>(msg.targetId);
+<span class="kw">if</span> (data == <span class="kw">null</span>) data = <span class="kw">this</span>.replicaStore.<span class="fn">get</span>(msg.targetId);
+<span class="cls">EDSimulator</span>.<span class="fn">add</span>(<span class="num-lit">1</span>, <span class="kw">new</span> <span class="cls">Message</span>(<span class="cls">Message</span>.GET_REPLY,
+    (data != <span class="kw">null</span> ? data : <span class="str">"NOT_FOUND"</span>), myNode, msg.targetId), msg.sender, pid);</pre>
+  </div>
+</section>
+
+<!-- STEP 4 -->
+<section id="step4">
+  <div class="section-label">Étape 4</div>
+  <h2>Routage avancé — Liens longs &amp; Piggybacking</h2>
+  <p>Le routage de proche en proche en O(N) devient prohibitif sur de grands réseaux.
+     Le projet implémente l'approche <strong>piggybacking</strong> (sans tricher)
+     pour construire progressivement une table de liens longs similaire à une <em>Finger Table</em> Chord.</p>
+
+  <div class="grid grid-2" style="margin:2rem 0">
+    <div class="card" style="border-color:var(--red)">
+      <div class="icon">&#128683;</div>
+      <h4>Vue globale — "tricher" (rejeté)</h4>
+      <p>Utiliser <code>Network.get(random)</code> pour piocher des nœuds connus globalement.
+         Brise l'aspect distribué — un vrai nœud n'a pas de vue globale du réseau. Approche <strong>non retenue</strong>.</p>
+    </div>
+    <div class="card" style="border-color:var(--green)">
+      <div class="icon">&#129513;</div>
+      <h4>Piggybacking — sans tricher (retenu)</h4>
+      <p>Chaque message entrant révèle son expéditeur. Ce nœud est ajouté à une liste
+         <code>longLinks</code> (max 5). Au fil des échanges, chaque nœud découvre
+         organiquement des correspondants éloignés comme <strong>raccourcis</strong>.</p>
+    </div>
+  </div>
+
+  <div class="code-wrap">
+    <div class="code-header">
+      <div class="dots"><span class="dot-r"></span><span class="dot-y"></span><span class="dot-g"></span></div>
+      <span>DHTNode.java — processEvent() — Piggybacking (étape 4)</span><span></span>
+    </div>
+    <pre><span class="cmt">// Étape 4 : Piggybacking — on apprend les nœuds distants via les en-têtes</span>
+<span class="kw">if</span> (msg.sender != <span class="kw">null</span> &amp;&amp; msg.sender != node
+        &amp;&amp; !longLinks.<span class="fn">contains</span>(msg.sender)) {
+    <span class="kw">if</span> (longLinks.<span class="fn">size</span>() &lt; <span class="num-lit">5</span>) { <span class="cmt">// Limité à 5 → simule une Finger Table réduite</span>
+        longLinks.<span class="fn">add</span>(msg.sender);
+    }
+}</pre>
+  </div>
+
+  <div class="code-wrap">
+    <div class="code-header">
+      <div class="dots"><span class="dot-r"></span><span class="dot-y"></span><span class="dot-g"></span></div>
+      <span>DHTNode.java — handleRouting() — Sélection du meilleur saut</span><span></span>
+    </div>
+    <pre><span class="cls">Node</span> bestNextHop = <span class="kw">this</span>.succ;
+<span class="kw">long</span> bestDist = <span class="fn">distance</span>(<span class="kw">this</span>.id, targetId);
+
+<span class="kw">for</span> (<span class="cls">Node</span> link : longLinks) {
+    <span class="cls">DHTNode</span> linkDHT = (<span class="cls">DHTNode</span>) link.<span class="fn">getProtocol</span>(pid);
+    <span class="kw">long</span> dist = <span class="fn">distance</span>(linkDHT.id, targetId);
+    <span class="kw">if</span> (dist &lt; bestDist) { bestDist = dist; bestNextHop = link; }
+}
+
+<span class="kw">if</span> (bestNextHop != <span class="kw">this</span>.succ)
+    System.out.<span class="fn">println</span>(<span class="str">"  [SHORTCUT] Node "</span> + <span class="kw">this</span>.id + <span class="str">" -> "</span> + linkDHT.id);
+<span class="kw">else</span>
+    System.out.<span class="fn">println</span>(<span class="str">"  [FORWARD] Node "</span> + <span class="kw">this</span>.id + <span class="str">" passe le relai au Node "</span> + succDHT.id);
+<span class="cls">EDSimulator</span>.<span class="fn">add</span>(<span class="num-lit">1</span>, msg, bestNextHop, pid);</pre>
+  </div>
+
+  <div class="warn-box">
+    <strong>Nota bene — Métrique de distance simplifiée :</strong><br>
+    La fonction <code>distance()</code> utilise <code>|id1 - id2|</code>. Dans une DHT circulaire pure,
+    la distance exacte serait <code>(id2 - id1) mod MAX</code>. Acceptable en simulation
+    (IDs uniformément distribués) mais à corriger pour un déploiement réel.
+  </div>
+</section>
+
+<!-- PERFORMANCES -->
+<section id="perf">
+  <div class="section-label">Analyse des performances</div>
+  <h2>Courbes et complexité</h2>
+  <p>Comparaison du routage classique en anneau (O(N) sauts) vs le routage enrichi
+     par piggybacking. On observe une réduction significative du nombre de sauts moyen.</p>
+
+  <div class="chart-wrap">
+    <canvas id="hopsChart" height="320"></canvas>
+  </div>
+
+  <div class="grid grid-3" style="margin-top:1.5rem">
+    <div class="stat"><div class="num" style="color:var(--red)">O(N)</div><div class="label">Routage anneau simple</div></div>
+    <div class="stat"><div class="num" style="color:var(--green)">O(log N)</div><div class="label">Avec piggybacking</div></div>
+    <div class="stat"><div class="num" style="color:var(--orange)">~15-50×</div><div class="label">Réduction facteur de sauts</div></div>
+  </div>
+
+  <h3>Bilan par étape</h3>
+  <table>
+    <thead><tr><th>Étape</th><th>Fonctionnalité</th><th>Complexité routage</th><th>Statut</th></tr></thead>
+    <tbody>
+      <tr><td>1</td><td>Join (insertion dans l'anneau)</td><td>O(N) sauts jusqu'au bon intervalle</td><td><span class="badge-ok">&#9989; Complet</span></td></tr>
+      <tr><td>1</td><td>Leave (départ propre)</td><td>O(1) — 2 messages directs aux voisins</td><td><span class="badge-ok">&#9989; Complet</span></td></tr>
+      <tr><td>2</td><td>Send / Deliver (routage applicatif)</td><td>O(N) anneau simple</td><td><span class="badge-ok">&#9989; Complet</span></td></tr>
+      <tr><td>3</td><td>Put / Get + réplication degré 3</td><td>O(N) routing + O(1) réplication</td><td><span class="badge-ok">&#9989; Complet</span></td></tr>
+      <tr><td>4</td><td>Piggybacking (liens longs)</td><td>Tend vers O(log N)</td><td><span class="badge-ok">&#9989; Complet</span></td></tr>
+      <tr><td>+</td><td>Stabilisation anti-crash (théorie)</td><td>Stabilisation périodique</td><td><span class="badge-info">&#128161; Réflexion</span></td></tr>
+    </tbody>
+  </table>
+
+  <h3>Timeline complète de simulation (T=0 à T=1000)</h3>
+  <div class="timeline">
+    <div class="tl-item"><div class="tl-dot"></div><div class="tl-time">T = 0</div>
+      <h4>Bootstrap — Node 0 seul dans l'anneau</h4><p>pred = succ = self. ID aléatoire 64 bits attribué.</p></div>
+    <div class="tl-item"><div class="tl-dot"></div><div class="tl-time">T = 10 … T = 90</div>
+      <h4>Joins échelonnés — Nodes 1 à 9</h4><p>Délai progressif i×10 pour éviter les conflits d'insertion simultanée.</p></div>
+    <div class="tl-item"><div class="tl-dot" style="background:var(--red)"></div><div class="tl-time">T = 300</div>
+      <h4>Leave — Node 5 quitte proprement</h4><p>Voisins reconnectés. RingObserver valide l'intégrité à T=400.</p></div>
+    <div class="tl-item"><div class="tl-dot" style="background:var(--orange)"></div><div class="tl-time">T = 400</div>
+      <h4>Send — Node 2 route "Hello Routing" vers Node 7</h4><p>Logs <code>[FORWARD]</code> ou <code>[SHORTCUT]</code> visibles en console.</p></div>
+    <div class="tl-item"><div class="tl-dot" style="background:var(--purple)"></div><div class="tl-time">T = 500</div>
+      <h4>Put — Node 1 stocke "Mon super projet M1"</h4><p>Réplication automatique chez pred et succ du responsable.</p></div>
+    <div class="tl-item"><div class="tl-dot" style="background:var(--green)"></div><div class="tl-time">T = 600</div>
+      <h4>Get — Node 1 récupère la donnée avec succès</h4><p><code>&lt;&lt;&lt; RECEIVED REPLY: "Mon super projet M1"</code></p></div>
+    <div class="tl-item"><div class="tl-dot"></div><div class="tl-time">T = 200 / 400 / 600 / 800 / 1000</div>
+      <h4>RingObserver — snapshots périodiques de l'anneau</h4><p>Affichage de chaque nœud avec pred/succ pour validation.</p></div>
+  </div>
+</section>
+
+<!-- CONCLUSION -->
+<section id="conclusion">
+  <div class="section-label">Conclusions &amp; Perspectives</div>
+  <h2>Bilan et pistes d'amélioration</h2>
+
+  <div class="grid grid-2" style="margin:2rem 0">
+    <div>
+      <h3 style="color:var(--green)">Ce qui fonctionne</h3>
+      <div class="grid" style="gap:.75rem">
+        <div class="card" style="padding:1rem"><h4>&#9989; Anneau auto-organisé</h4><p style="font-size:.85rem">Join step-by-step avec gestion du wraparound, Leave propre avec reconnexion des voisins.</p></div>
+        <div class="card" style="padding:1rem"><h4>&#9989; Routage avec logs complets</h4><p style="font-size:.85rem">Tags <code>[FORWARD]</code> et <code>[SHORTCUT]</code> permettent de tracer chaque décision de routage.</p></div>
+        <div class="card" style="padding:1rem"><h4>&#9989; Réplication degré 3</h4><p style="font-size:.85rem">Donnée disponible même si le nœud responsable disparaît — fallback sur replicaStore.</p></div>
+        <div class="card" style="padding:1rem"><h4>&#9989; Piggybacking organique</h4><p style="font-size:.85rem">Apprentissage passif de raccourcis, sans accès global au réseau.</p></div>
+      </div>
+    </div>
+    <div>
+      <h3 style="color:var(--orange)">Pistes d'amélioration</h3>
+      <div class="grid" style="gap:.75rem">
+        <div class="card" style="padding:1rem;border-color:var(--orange)"><h4>&#128267; Stabilisation anti-crash</h4><p style="font-size:.85rem">Routine de ping périodique (<code>CHECK_ALIVE</code>) avec timeout et contournement via longLinks.</p></div>
+        <div class="card" style="padding:1rem;border-color:var(--orange)"><h4>&#128260; Démon d'anti-entropie</h4><p style="font-size:.85rem">Vérification périodique que les 2 copies de réplica existent — re-envoi de STORE_REPLICA si manquant.</p></div>
+        <div class="card" style="padding:1rem;border-color:var(--purple)"><h4>&#128268; Distance circulaire exacte</h4><p style="font-size:.85rem">Remplacer |id1-id2| par (id2-id1) mod MAX pour un routage mathématiquement correct.</p></div>
+        <div class="card" style="padding:1rem;border-color:var(--purple)"><h4>&#128203; Successor List</h4><p style="font-size:.85rem">Maintenir une liste des k successeurs (comme Chord) pour résister aux pannes multiples.</p></div>
+      </div>
+    </div>
+  </div>
+
+  <h3>Références</h3>
+  <table>
+    <thead><tr><th>Ressource</th><th>Utilité</th></tr></thead>
+    <tbody>
+      <tr><td>Stoica et al. — <em>Chord: A Scalable P2P Lookup Protocol</em> (2001)</td><td>Base théorique de l'anneau DHT et des Finger Tables</td></tr>
+      <tr><td>PeerSim Documentation</td><td>API EDSimulator, Control, EDProtocol</td></tr>
+      <tr><td>Maymounkov &amp; Mazières — <em>Kademlia</em> (2002)</td><td>Inspiration pour le piggybacking et l'apprentissage passif</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<footer>Projet DHT sur PeerSim · Rahou Zakaria &amp; Abidi Amine · M1 Informatique · Systèmes Distribués · 2025</footer>
+
+<script>
+(function(){
+  const g=document.getElementById('ring-nodes');
+  if(!g)return;
+  const cx=260,cy=260,r=170;
+  const nodes=[
+    {label:'N0',angle:-90,active:true},{label:'N1',angle:-30,active:true},
+    {label:'N2',angle:30,active:true},{label:'N3',angle:90,active:true},
+    {label:'N4',angle:130,active:true},{label:'N5',angle:160,active:false},
+    {label:'N6',angle:200,active:true},{label:'N7',angle:240,active:true},
+    {label:'N8',angle:300,active:true},{label:'N9',angle:340,active:true},
+  ];
+  const toRad=a=>a*Math.PI/180;
+  const pts=nodes.map(n=>({x:cx+r*Math.cos(toRad(n.angle)),y:cy+r*Math.sin(toRad(n.angle)),...n}));
+  const activePts=pts.filter(p=>p.active);
+  activePts.forEach((p,i)=>{
+    const next=activePts[(i+1)%activePts.length];
+    const dx=next.x-p.x,dy=next.y-p.y,len=Math.sqrt(dx*dx+dy*dy);
+    const ux=dx/len,uy=dy/len;
+    const isReformed=(p.label==='N4'&&next.label==='N6');
+    const el=document.createElementNS('http://www.w3.org/2000/svg','line');
+    el.setAttribute('x1',p.x+ux*18);el.setAttribute('y1',p.y+uy*18);
+    el.setAttribute('x2',next.x-ux*20);el.setAttribute('y2',next.y-uy*20);
+    el.setAttribute('stroke',isReformed?'#3fb950':'#30363d');
+    el.setAttribute('stroke-width',isReformed?'2':'1.5');
+    el.setAttribute('marker-end',isReformed?'url(#arr-green)':'url(#arr)');
+    g.appendChild(el);
+  });
+  const n5=pts[5];
+  const ex=document.createElementNS('http://www.w3.org/2000/svg','line');
+  ex.setAttribute('x1',n5.x);ex.setAttribute('y1',n5.y);
+  ex.setAttribute('x2',n5.x-40);ex.setAttribute('y2',n5.y-35);
+  ex.setAttribute('stroke','#f85149');ex.setAttribute('stroke-width','1.5');
+  ex.setAttribute('stroke-dasharray','4,3');ex.setAttribute('marker-end','url(#arr-red)');
+  g.appendChild(ex);
+  pts.forEach(p=>{
+    const c=document.createElementNS('http://www.w3.org/2000/svg','circle');
+    c.setAttribute('cx',p.x);c.setAttribute('cy',p.y);c.setAttribute('r','18');
+    c.setAttribute('fill','#161b22');c.setAttribute('stroke',p.active?'#1a73e8':'#f85149');
+    c.setAttribute('stroke-width','2');if(!p.active)c.setAttribute('opacity','0.6');
+    g.appendChild(c);
+    const t=document.createElementNS('http://www.w3.org/2000/svg','text');
+    t.setAttribute('x',p.x);t.setAttribute('y',p.y+4);t.setAttribute('text-anchor','middle');
+    t.setAttribute('fill',p.active?'#e6edf3':'#f85149');t.setAttribute('font-size','11');t.setAttribute('font-weight','600');
+    t.textContent=p.label;g.appendChild(t);
+  });
+  const lbl=document.createElementNS('http://www.w3.org/2000/svg','text');
+  lbl.setAttribute('x',n5.x-45);lbl.setAttribute('y',n5.y-42);
+  lbl.setAttribute('text-anchor','middle');lbl.setAttribute('fill','#f85149');lbl.setAttribute('font-size','11');
+  lbl.textContent='LEAVE';g.appendChild(lbl);
+})();
+
+(function(){
+  const canvas=document.getElementById('hopsChart');
+  if(!canvas)return;
+  const W=canvas.parentElement.offsetWidth-48,H=300;
+  canvas.width=W;canvas.height=H;
+  const ctx=canvas.getContext('2d');
+  const pad={top:30,right:30,bottom:50,left:55};
+  const plotW=W-pad.left-pad.right,plotH=H-pad.top-pad.bottom;
+  const sizes=[10,20,50,100,200,500,1000];
+  const basicHops=sizes.map(n=>n/2);
+  const piggyHops=sizes.map(n=>Math.max(2,Math.round(Math.log2(n)*1.5)));
+  const maxY=Math.max(...basicHops);
+  const px=x=>pad.left+(Math.log(x)/Math.log(1000))*plotW;
+  const py=y=>pad.top+plotH-(y/maxY)*plotH;
+  ctx.fillStyle='#161b22';ctx.fillRect(0,0,W,H);
+  ctx.strokeStyle='#21262d';ctx.lineWidth=1;
+  [100,200,300,400,500].forEach(y=>{
+    if(y>maxY)return;
+    ctx.beginPath();ctx.moveTo(pad.left,py(y));ctx.lineTo(pad.left+plotW,py(y));ctx.stroke();
+    ctx.fillStyle='#8b949e';ctx.font='11px monospace';ctx.textAlign='right';
+    ctx.fillText(y,pad.left-4,py(y)+4);
+  });
+  sizes.forEach(x=>{
+    ctx.fillStyle='#8b949e';ctx.font='11px monospace';ctx.textAlign='center';
+    ctx.fillText(x,px(x),pad.top+plotH+18);
+  });
+  ctx.strokeStyle='#30363d';ctx.lineWidth=1.5;
+  ctx.beginPath();ctx.moveTo(pad.left,pad.top);ctx.lineTo(pad.left,pad.top+plotH);ctx.lineTo(pad.left+plotW,pad.top+plotH);ctx.stroke();
+  function drawLine(data,color,dashed){
+    ctx.save();ctx.strokeStyle=color;ctx.lineWidth=2.5;ctx.lineJoin='round';
+    if(dashed)ctx.setLineDash([6,4]);
+    ctx.beginPath();
+    sizes.forEach((x,i)=>{i===0?ctx.moveTo(px(x),py(data[i])):ctx.lineTo(px(x),py(data[i]));});
+    ctx.stroke();ctx.setLineDash([]);
+    ctx.fillStyle=color;
+    sizes.forEach((x,i)=>{ctx.beginPath();ctx.arc(px(x),py(data[i]),4,0,Math.PI*2);ctx.fill();});
+    ctx.restore();
+  }
+  drawLine(basicHops,'#f85149',true);
+  drawLine(piggyHops,'#3fb950',false);
+  const lx=pad.left+plotW-220,ly=pad.top+10;
+  ctx.fillStyle='rgba(22,27,34,.9)';ctx.strokeStyle='#30363d';ctx.lineWidth=1;
+  ctx.beginPath();ctx.roundRect(lx,ly,215,58,6);ctx.fill();ctx.stroke();
+  [[lx+14,ly+20,'#f85149',true,'Anneau simple — O(N)'],
+   [lx+14,ly+42,'#3fb950',false,'Piggybacking — O(log N)']
+  ].forEach(([x,y,color,dashed,text])=>{
+    ctx.save();ctx.strokeStyle=color;ctx.lineWidth=2;
+    if(dashed)ctx.setLineDash([5,3]);
+    ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x+24,y);ctx.stroke();ctx.setLineDash([]);ctx.restore();
+    ctx.fillStyle='#e6edf3';ctx.font='12px sans-serif';ctx.textAlign='left';
+    ctx.fillText(text,x+32,y+4);
+  });
+  ctx.fillStyle='#e6edf3';ctx.font='bold 13px sans-serif';ctx.textAlign='left';
+  ctx.fillText('Nombre de sauts moyen par requête en fonction de N',pad.left+4,pad.top-8);
+})();
+</script>
+</body>
+</html>

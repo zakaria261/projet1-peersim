@@ -1,0 +1,1069 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DHT sur PeerSim — Présentation</title>
+  <style>
+    :root {
+      --blue: #1a73e8;
+      --dark: #0d1117;
+      --surface: #161b22;
+      --border: #30363d;
+      --text: #e6edf3;
+      --muted: #8b949e;
+      --green: #3fb950;
+      --orange: #f0883e;
+      --red: #f85149;
+      --purple: #bc8cff;
+    }
+
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0
+    }
+
+    html {
+      scroll-behavior: smooth
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: var(--dark);
+      color: var(--text);
+      line-height: 1.6
+    }
+
+    /* NAV */
+    nav {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 100;
+      background: rgba(13, 17, 23, .95);
+      backdrop-filter: blur(8px);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 0;
+      padding: 0;
+    }
+
+    nav a {
+      color: var(--muted);
+      text-decoration: none;
+      font-size: .82rem;
+      padding: .7rem 1.1rem;
+      border-bottom: 2px solid transparent;
+      transition: color .15s, border-color .15s;
+      white-space: nowrap;
+    }
+
+    nav a:hover {
+      color: var(--text);
+      border-color: var(--blue)
+    }
+
+    nav .logo {
+      font-weight: 700;
+      font-size: .9rem;
+      color: var(--text);
+      padding: .7rem 1.2rem;
+      border-right: 1px solid var(--border)
+    }
+
+    /* SLIDE */
+    .slide {
+      min-height: 100vh;
+      padding: 5.5rem 3rem 3rem;
+      max-width: 1000px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+
+    .slide+.slide {
+      border-top: 1px solid var(--border)
+    }
+
+    .tag {
+      font-size: .7rem;
+      font-weight: 700;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      color: var(--blue);
+      margin-bottom: .4rem
+    }
+
+    h1 {
+      font-size: clamp(1.8rem, 4vw, 2.8rem);
+      font-weight: 800;
+      line-height: 1.2;
+      margin-bottom: .75rem
+    }
+
+    h2 {
+      font-size: clamp(1.4rem, 3vw, 2rem);
+      font-weight: 700;
+      margin-bottom: 1rem
+    }
+
+    h3 {
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--orange);
+      margin: 1.25rem 0 .5rem
+    }
+
+    p,
+    li {
+      color: var(--muted);
+      font-size: .92rem
+    }
+
+    ul {
+      padding-left: 1.2rem
+    }
+
+    li {
+      margin-bottom: .3rem
+    }
+
+    strong {
+      color: var(--text)
+    }
+
+    /* GRID */
+    .g2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+      margin: .75rem 0
+    }
+
+    .g3 {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1rem;
+      margin: .75rem 0
+    }
+
+    /* CARD */
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: .6rem;
+      padding: 1rem
+    }
+
+    .card h4 {
+      font-size: .9rem;
+      font-weight: 600;
+      margin-bottom: .35rem;
+      color: var(--text)
+    }
+
+    .card p {
+      font-size: .82rem;
+      margin: 0
+    }
+
+    /* CODE */
+    .code-wrap {
+      background: #010409;
+      border: 1px solid var(--border);
+      border-radius: .6rem;
+      overflow: hidden;
+      margin: .75rem 0
+    }
+
+    .code-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: .45rem 1rem;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      font-size: .75rem;
+      color: var(--muted)
+    }
+
+    .dots {
+      display: flex;
+      gap: .35rem
+    }
+
+    .dots span {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%
+    }
+
+    .dr {
+      background: #ff5f57
+    }
+
+    .dy {
+      background: #febc2e
+    }
+
+    .dg {
+      background: #28c840
+    }
+
+    pre {
+      padding: 1rem 1.25rem;
+      overflow-x: auto;
+      font-family: 'SFMono-Regular', Consolas, monospace;
+      font-size: .78rem;
+      line-height: 1.65
+    }
+
+    .kw {
+      color: #ff7b72
+    }
+
+    .cls {
+      color: #ffa657
+    }
+
+    .fn {
+      color: #d2a8ff
+    }
+
+    .str {
+      color: #a5d6ff
+    }
+
+    .cmt {
+      color: #8b949e;
+      font-style: italic
+    }
+
+    .nl {
+      color: #79c0ff
+    }
+
+    /* TABLE */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: .75rem 0;
+      font-size: .85rem
+    }
+
+    th {
+      background: var(--surface);
+      color: var(--text);
+      padding: .6rem .9rem;
+      text-align: left;
+      border-bottom: 2px solid var(--border);
+      font-weight: 600
+    }
+
+    td {
+      padding: .55rem .9rem;
+      border-bottom: 1px solid var(--border);
+      color: var(--muted)
+    }
+
+    tr:hover td {
+      background: rgba(255, 255, 255, .02)
+    }
+
+    .ok {
+      color: var(--green);
+      font-weight: 700
+    }
+
+    .info {
+      color: var(--blue);
+      font-weight: 700
+    }
+
+    /* STAT */
+    .stat {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: .6rem;
+      padding: 1rem;
+      text-align: center
+    }
+
+    .stat .n {
+      font-size: 2rem;
+      font-weight: 800;
+      color: var(--blue)
+    }
+
+    .stat .l {
+      font-size: .78rem;
+      color: var(--muted);
+      margin-top: .2rem
+    }
+
+    /* INFO BOX */
+    .box {
+      background: rgba(26, 115, 232, .07);
+      border-left: 3px solid var(--blue);
+      border-radius: 0 .4rem .4rem 0;
+      padding: .75rem 1rem;
+      margin: .75rem 0;
+      font-size: .85rem;
+      color: var(--muted)
+    }
+
+    .box strong {
+      color: var(--text)
+    }
+
+    .warn {
+      background: rgba(240, 136, 62, .07);
+      border-color: var(--orange)
+    }
+
+    /* FLOW */
+    .flow {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: .4rem;
+      margin: .75rem 0
+    }
+
+    .fs {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: .4rem;
+      padding: .35rem .75rem;
+      font-size: .8rem;
+      white-space: nowrap
+    }
+
+    .fa {
+      color: var(--blue);
+      font-size: 1rem
+    }
+
+    .fh {
+      border-color: var(--green);
+      color: var(--green)
+    }
+
+    .fo {
+      border-color: var(--orange);
+      color: var(--orange)
+    }
+
+    /* CHART */
+    .chart-wrap {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: .6rem;
+      padding: 1rem;
+      margin: .75rem 0
+    }
+
+    /* DEMO */
+    .demo-cmd {
+      background: #010409;
+      border: 1px solid var(--border);
+      border-radius: .5rem;
+      padding: .6rem 1rem;
+      font-family: monospace;
+      font-size: .82rem;
+      color: var(--green);
+      margin: .4rem 0
+    }
+
+    .demo-out {
+      background: #010409;
+      border: 1px solid var(--border);
+      border-radius: .5rem;
+      padding: .75rem 1rem;
+      font-family: monospace;
+      font-size: .75rem;
+      color: var(--muted);
+      margin: .4rem 0;
+      line-height: 1.8
+    }
+
+    .demo-out .hi {
+      color: var(--green)
+    }
+
+    .demo-out .hi2 {
+      color: var(--orange)
+    }
+
+    .demo-out .hi3 {
+      color: var(--blue)
+    }
+
+    .demo-out .hi4 {
+      color: var(--purple)
+    }
+
+    footer {
+      border-top: 1px solid var(--border);
+      text-align: center;
+      padding: 1.5rem;
+      color: var(--muted);
+      font-size: .8rem
+    }
+
+    @media(max-width:650px) {
+
+      .g2,
+      .g3 {
+        grid-template-columns: 1fr
+      }
+
+      .slide {
+        padding: 5rem 1.2rem 2rem
+      }
+
+      nav a {
+        padding: .6rem .7rem;
+        font-size: .75rem
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <nav>
+    <span class="logo">DHT / PeerSim</span>
+    <a href="#titre">Accueil</a>
+    <a href="#structure">Structure</a>
+    <a href="#step1">Join/Leave</a>
+    <a href="#step23">Routage &amp; Stockage</a>
+    <a href="#step4">Avancé</a>
+    <a href="#demo">Démo</a>
+  </nav>
+
+  <!-- ══════════════════════════════════════ 1. TITRE -->
+  <div class="slide" id="titre">
+    <div style="margin-bottom:2rem">
+      <div class="tag">M1 Informatique · Systèmes Distribués</div>
+      <h1>Implémentation d'une DHT<br>sur PeerSim</h1>
+      <p style="font-size:1rem;max-width:560px;color:var(--muted)">
+        Anneau auto-organisé, routage de messages, stockage répliqué (degré&nbsp;3)
+        et optimisation par piggybacking.
+      </p>
+    </div>
+
+    <div class="g3">
+      <div class="stat">
+        <div class="n">4</div>
+        <div class="l">Étapes complètes</div>
+      </div>
+      <div class="stat">
+        <div class="n">11</div>
+        <div class="l">Types de messages</div>
+      </div>
+      <div class="stat">
+        <div class="n" style="color:var(--green)">3</div>
+        <div class="l">Degré de réplication</div>
+      </div>
+    </div>
+
+    <div
+      style="margin-top:2rem;padding:1rem 1.25rem;background:var(--surface);border:1px solid var(--border);border-radius:.6rem;display:inline-flex;gap:3rem;flex-wrap:wrap">
+      <div>
+        <div
+          style="font-size:.7rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:.25rem">
+          Étudiants</div>
+        <div style="font-weight:700;font-size:1rem">Rahou Zakaria &amp; Abidi Amine</div>
+      </div>
+      <div>
+        <div
+          style="font-size:.7rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:.25rem">
+          Simulateur</div>
+        <div style="font-weight:700;font-size:1rem">PeerSim 1.0.5 · EDSimulator</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════ 2. STRUCTURE DU CODE -->
+  <div class="slide" id="structure">
+    <div class="tag">Architecture</div>
+    <h2>Structure du code</h2>
+
+    <div class="g2">
+      <div>
+        <table>
+          <thead>
+            <tr>
+              <th>Classe</th>
+              <th>Rôle</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>DHTNode</code></td>
+              <td>Protocole principal — toute la logique</td>
+            </tr>
+            <tr>
+              <td><code>Message</code></td>
+              <td>Conteneur (type, contenu, sender, targetId)</td>
+            </tr>
+            <tr>
+              <td><code>CustomInitializer</code></td>
+              <td>Bootstrap + planification des tests</td>
+            </tr>
+            <tr>
+              <td><code>RingObserver</code></td>
+              <td>Validation de l'intégrité de l'anneau</td>
+            </tr>
+            <tr>
+              <td><code>LeaveControl</code></td>
+              <td>Déclencheur de départ propre</td>
+            </tr>
+            <tr>
+              <td><code>SendControl</code></td>
+              <td>Test de routage point-à-point</td>
+            </tr>
+            <tr>
+              <td><code>StorageControl</code></td>
+              <td>Tests PUT / GET</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div class="box" style="margin-top:.75rem">
+          <strong>Choix : EDSimulator</strong> plutôt que le mode cycle —
+          modélise les communications <strong>asynchrones</strong> de façon réaliste
+          (envois, forwards, réceptions avec timestamps distincts).
+        </div>
+      </div>
+
+      <div>
+        <h3>DHTNode — champs principaux</h3>
+        <div class="code-wrap">
+          <div class="code-head">
+            <div class="dots"><span class="dr"></span><span class="dy"></span><span class="dg"></span></div>
+            <span>DHTNode.java</span>
+          </div>
+          <pre><span class="kw">public class</span> <span class="cls">DHTNode</span> <span class="kw">implements</span> <span class="cls">EDProtocol</span> {
+
+  <span class="kw">public long</span>   id;          <span class="cmt">// ID 64 bits aléatoire</span>
+  <span class="kw">public</span> <span class="cls">Node</span>   pred, succ;  <span class="cmt">// Voisins dans l'anneau</span>
+
+  <span class="cmt">// Étape 3</span>
+  HashMap&lt;Long,Object&gt; dataStore;
+  HashMap&lt;Long,Object&gt; replicaStore;
+
+  <span class="cmt">// Étape 4</span>
+  ArrayList&lt;<span class="cls">Node</span>&gt; longLinks; <span class="cmt">// max 5</span>
+}</pre>
+        </div>
+
+        <h3>Dispatcher central</h3>
+        <div class="code-wrap">
+          <div class="code-head">
+            <div class="dots"><span class="dr"></span><span class="dy"></span><span class="dg"></span></div>
+            <span>processEvent() — switch sur msg.type</span>
+          </div>
+          <pre><span class="kw">switch</span> (msg.type) {
+  <span class="kw">case</span> JOIN_REQUEST  → <span class="fn">handleJoinRequest</span>()
+  <span class="kw">case</span> JOIN_ACCEPTED → mettre à jour pred/succ
+  <span class="kw">case</span> LEAVE_NOTIFY  → <span class="fn">leaveNetwork</span>()
+  <span class="kw">case</span> UPDATE_PRED   → <span class="kw">this</span>.pred = msg.content
+  <span class="kw">case</span> UPDATE_SUCC   → <span class="kw">this</span>.succ = msg.content
+  <span class="kw">case</span> SEND/PUT/GET  → <span class="fn">handleRouting</span>()
+  <span class="kw">case</span> STORE_REPLICA → replicaStore.put(...)
+  <span class="kw">case</span> GET_REPLY     → afficher le résultat
+}</pre>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════ 3. JOIN / LEAVE -->
+  <div class="slide" id="step1">
+    <div class="tag">Étape 1</div>
+    <h2>Algorithmes Join &amp; Leave</h2>
+
+    <div class="g2">
+      <div>
+        <h3>Join — insertion step-by-step</h3>
+        <div class="flow">
+          <div class="fs">Nouveau nœud N</div>
+          <div class="fa">→</div>
+          <div class="fs">JOIN_REQUEST → Node 0</div>
+          <div class="fa">→</div>
+          <div class="fs fo">pred.id &lt; N.id &lt; succ.id ?</div>
+          <div class="fa">→</div>
+          <div class="fs fh">JOIN_ACCEPTED</div>
+        </div>
+        <div class="code-wrap">
+          <div class="code-head">
+            <div class="dots"><span class="dr"></span><span class="dy"></span><span class="dg"></span></div>
+            <span>handleJoinRequest()</span>
+          </div>
+          <pre><span class="cmt">// Cas normal</span>
+<span class="kw">if</span> (this.id &lt; mySucc.id) {
+  inBetween = newId &gt; this.id
+           &amp;&amp; newId &lt; mySucc.id;
+}
+<span class="cmt">// Wraparound (ex: pred=90, succ=10)</span>
+<span class="kw">else if</span> (this.id &gt; mySucc.id) {
+  inBetween = newId &gt; this.id
+           || newId &lt; mySucc.id;
+}
+
+<span class="kw">if</span> (inBetween) {
+  <span class="kw">this</span>.succ = newNode;
+  send(JOIN_ACCEPTED, [me, oldSucc], newNode);
+  send(UPDATE_PRED,    newNode,      oldSucc);
+} <span class="kw">else</span> {
+  forward(msg, <span class="kw">this</span>.succ); <span class="cmt">// hop suivant</span>
+}</pre>
+        </div>
+      </div>
+
+      <div>
+        <h3>Leave — départ propre</h3>
+        <div class="flow">
+          <div class="fs fo">Nœud N quitte</div>
+          <div class="fa">→</div>
+          <div class="fs">UPDATE_SUCC → pred</div>
+          <div class="fa">+</div>
+          <div class="fs">UPDATE_PRED → succ</div>
+          <div class="fa">→</div>
+          <div class="fs fh">Anneau reformé</div>
+        </div>
+        <div class="code-wrap">
+          <div class="code-head">
+            <div class="dots"><span class="dr"></span><span class="dy"></span><span class="dg"></span></div>
+            <span>leaveNetwork()</span>
+          </div>
+          <pre><span class="kw">public void</span> <span class="fn">leaveNetwork</span>(Node me, <span class="kw">int</span> pid) {
+  <span class="cmt">// pred.succ ← mon successeur</span>
+  send(UPDATE_SUCC, <span class="kw">this</span>.succ, <span class="kw">this</span>.pred);
+  <span class="cmt">// succ.pred ← mon prédécesseur</span>
+  send(UPDATE_PRED, <span class="kw">this</span>.pred, <span class="kw">this</span>.succ);
+
+  <span class="kw">this</span>.pred = <span class="kw">null</span>;
+  <span class="kw">this</span>.succ = <span class="kw">null</span>;
+}</pre>
+        </div>
+
+        <div class="box" style="margin-top:.75rem">
+          <strong>RingObserver</strong> parcourt l'anneau toutes les 200 unités de temps et
+          détecte les <strong>succ null</strong> (boucle brisée) ou les boucles infinies
+          (compteur &gt; 2×N).
+        </div>
+
+        <!-- Ring SVG compact -->
+        <svg viewBox="0 0 280 180" width="100%" style="max-width:320px;display:block;margin:.5rem auto">
+          <defs>
+            <marker id="a1" markerWidth="7" markerHeight="7" refX="5" refY="2.5" orient="auto">
+              <path d="M0,0 L0,5 L7,2.5 z" fill="#1a73e8" />
+            </marker>
+            <marker id="a2" markerWidth="7" markerHeight="7" refX="5" refY="2.5" orient="auto">
+              <path d="M0,0 L0,5 L7,2.5 z" fill="#3fb950" />
+            </marker>
+            <marker id="a3" markerWidth="7" markerHeight="7" refX="5" refY="2.5" orient="auto">
+              <path d="M0,0 L0,5 L7,2.5 z" fill="#f85149" />
+            </marker>
+          </defs>
+          <!-- Nodes -->
+          <circle cx="140" cy="30" r="18" fill="#161b22" stroke="#1a73e8" stroke-width="1.5" />
+          <text x="140" y="34" text-anchor="middle" fill="#e6edf3" font-size="10" font-family="monospace">N0</text>
+          <circle cx="240" cy="90" r="18" fill="#161b22" stroke="#1a73e8" stroke-width="1.5" />
+          <text x="240" y="94" text-anchor="middle" fill="#e6edf3" font-size="10" font-family="monospace">N1</text>
+          <circle cx="200" cy="160" r="18" fill="#161b22" stroke="#f85149" stroke-width="1.5" opacity=".65" />
+          <text x="200" y="164" text-anchor="middle" fill="#f85149" font-size="10" font-family="monospace">N2✕</text>
+          <circle cx="80" cy="160" r="18" fill="#161b22" stroke="#1a73e8" stroke-width="1.5" />
+          <text x="80" y="164" text-anchor="middle" fill="#e6edf3" font-size="10" font-family="monospace">N3</text>
+          <circle cx="40" cy="90" r="18" fill="#161b22" stroke="#1a73e8" stroke-width="1.5" />
+          <text x="40" y="94" text-anchor="middle" fill="#e6edf3" font-size="10" font-family="monospace">N4</text>
+          <!-- Normal arcs -->
+          <line x1="156" y1="40" x2="224" y2="78" stroke="#30363d" stroke-width="1.2" marker-end="url(#a1)" />
+          <line x1="55" y1="100" x2="122" y2="148" stroke="#30363d" stroke-width="1.2" marker-end="url(#a1)" />
+          <line x1="124" y1="40" x2="55" y2="80" stroke="#30363d" stroke-width="1.2" marker-end="url(#a1)" />
+          <!-- N2 leave arrow up -->
+          <line x1="200" y1="142" x2="220" y2="115" stroke="#f85149" stroke-width="1.2" stroke-dasharray="4,3"
+            marker-end="url(#a3)" />
+          <!-- Reformed link N1→N3 -->
+          <line x1="224" y1="106" x2="97" y2="155" stroke="#3fb950" stroke-width="2" marker-end="url(#a2)" />
+          <text x="168" y="122" text-anchor="middle" fill="#3fb950" font-size="9" font-family="monospace">reformé</text>
+        </svg>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════ 4. ROUTAGE + STOCKAGE -->
+  <div class="slide" id="step23">
+    <div class="tag">Étapes 2 &amp; 3</div>
+    <h2>Routage &amp; Stockage répliqué</h2>
+
+    <div class="g2">
+      <div>
+        <h3>Algorithme de routage (étape 2)</h3>
+        <p style="margin-bottom:.5rem">Un nœud est <strong>responsable</strong> de la clé <code>k</code> si&nbsp;:</p>
+        <div class="box"><code>pred.id &lt; k ≤ node.id</code> &nbsp;(+ gestion wraparound)</div>
+        <div class="code-wrap">
+          <div class="code-head">
+            <div class="dots"><span class="dr"></span><span class="dy"></span><span class="dg"></span></div>
+            <span>handleRouting()</span>
+          </div>
+          <pre><span class="kw">if</span> (targetId == this.id || iAmResponsible) {
+  <span class="fn">handleStorageOrDelivery</span>(msg);
+} <span class="kw">else</span> {
+  <span class="cmt">// Forward vers le meilleur saut</span>
+  EDSimulator.<span class="fn">add</span>(<span class="nl">1</span>, msg, bestNextHop, pid);
+  System.out.<span class="fn">println</span>(
+    <span class="str">"[FORWARD] Node "</span> + id + <span class="str">" → "</span> + nextId);
+}</pre>
+        </div>
+
+        <h3>Messages définis (11 types)</h3>
+        <table>
+          <thead>
+            <tr>
+              <th>Constante</th>
+              <th>Usage</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>JOIN_REQUEST / ACCEPTED</code></td>
+              <td>Construction de l'anneau</td>
+            </tr>
+            <tr>
+              <td><code>UPDATE_PRED / SUCC</code></td>
+              <td>Mise à jour des voisins</td>
+            </tr>
+            <tr>
+              <td><code>LEAVE_NOTIFY</code></td>
+              <td>Départ propre</td>
+            </tr>
+            <tr>
+              <td><code>SEND_DATA</code></td>
+              <td>Routage applicatif</td>
+            </tr>
+            <tr>
+              <td><code>PUT_DATA / GET_DATA / GET_REPLY</code></td>
+              <td>Stockage distribué</td>
+            </tr>
+            <tr>
+              <td><code>STORE_REPLICA</code></td>
+              <td>Réplication sur voisins</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div>
+        <h3>Stockage + réplication degré 3 (étape 3)</h3>
+
+        <!-- Replication SVG -->
+        <svg viewBox="0 0 380 130" width="100%" style="max-width:400px;display:block;margin:.5rem 0">
+          <defs>
+            <marker id="ag" markerWidth="7" markerHeight="7" refX="5" refY="2.5" orient="auto">
+              <path d="M0,0 L0,5 L7,2.5 z" fill="#3fb950" />
+            </marker>
+            <marker id="ao" markerWidth="7" markerHeight="7" refX="5" refY="2.5" orient="auto">
+              <path d="M0,0 L0,5 L7,2.5 z" fill="#f0883e" />
+            </marker>
+          </defs>
+          <rect x="5" y="40" width="100" height="50" rx="7" fill="#161b22" stroke="#30363d" stroke-width="1.5" />
+          <text x="55" y="62" text-anchor="middle" fill="#8b949e" font-size="10" font-family="monospace">pred</text>
+          <text x="55" y="78" text-anchor="middle" fill="#3fb950" font-size="10"
+            font-family="monospace">replicaStore</text>
+          <rect x="140" y="25" width="100" height="80" rx="7" fill="#161b22" stroke="#1a73e8" stroke-width="2" />
+          <text x="190" y="56" text-anchor="middle" fill="#e6edf3" font-size="10" font-family="monospace"
+            font-weight="bold">responsable</text>
+          <text x="190" y="72" text-anchor="middle" fill="#1a73e8" font-size="10"
+            font-family="monospace">dataStore</text>
+          <rect x="275" y="40" width="100" height="50" rx="7" fill="#161b22" stroke="#30363d" stroke-width="1.5" />
+          <text x="325" y="62" text-anchor="middle" fill="#8b949e" font-size="10" font-family="monospace">succ</text>
+          <text x="325" y="78" text-anchor="middle" fill="#3fb950" font-size="10"
+            font-family="monospace">replicaStore</text>
+          <line x1="140" y1="65" x2="108" y2="65" stroke="#3fb950" stroke-width="1.5" marker-end="url(#ag)" />
+          <line x1="240" y1="65" x2="272" y2="65" stroke="#3fb950" stroke-width="1.5" marker-end="url(#ag)" />
+          <line x1="190" y1="10" x2="190" y2="24" stroke="#f0883e" stroke-width="1.5" marker-end="url(#ao)" />
+          <text x="190" y="8" text-anchor="middle" fill="#f0883e" font-size="9" font-family="monospace">PUT_DATA</text>
+          <text x="110" y="58" text-anchor="middle" fill="#3fb950" font-size="8" font-family="monospace">REPLICA</text>
+          <text x="260" y="58" text-anchor="middle" fill="#3fb950" font-size="8" font-family="monospace">REPLICA</text>
+          <text x="190" y="118" text-anchor="middle" fill="#8b949e" font-size="9" font-family="monospace">Degré de
+            réplication = 3</text>
+        </svg>
+
+        <div class="code-wrap">
+          <div class="code-head">
+            <div class="dots"><span class="dr"></span><span class="dy"></span><span class="dg"></span></div>
+            <span>handleStorageOrDelivery() — PUT</span>
+          </div>
+          <pre><span class="kw">case</span> PUT_DATA:
+  dataStore.<span class="fn">put</span>(msg.targetId, msg.content);
+  <span class="cmt">// Réplication degré 3</span>
+  send(STORE_REPLICA, msg.content, <span class="kw">this</span>.pred);
+  send(STORE_REPLICA, msg.content, <span class="kw">this</span>.succ);
+
+<span class="kw">case</span> GET_DATA:
+  data = dataStore.<span class="fn">get</span>(key);
+  <span class="kw">if</span> (data == <span class="kw">null</span>)
+    data = replicaStore.<span class="fn">get</span>(key); <span class="cmt">// fallback</span>
+  send(GET_REPLY, data, msg.sender);</pre>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════ 5. ROUTAGE AVANCÉ -->
+  <div class="slide" id="step4">
+    <div class="tag">Étape 4</div>
+    <h2>Routage avancé — Piggybacking</h2>
+
+    <div class="g2">
+      <div>
+        <h3>Le problème</h3>
+        <p>Le routage de proche en proche est en <strong>O(N)</strong> — prohibitif à grande échelle.</p>
+
+        <h3>Approche retenue : Piggybacking <span style="color:var(--green)">✓</span></h3>
+        <p>À chaque message reçu, on extrait l'<strong>expéditeur</strong> et on l'ajoute
+          à une liste <code>longLinks</code> (max 5, similaire à une Finger Table).</p>
+
+        <div class="code-wrap">
+          <div class="code-head">
+            <div class="dots"><span class="dr"></span><span class="dy"></span><span class="dg"></span></div>
+            <span>processEvent() — apprentissage passif</span>
+          </div>
+          <pre><span class="cmt">// Sur CHAQUE message entrant</span>
+<span class="kw">if</span> (msg.sender != <span class="kw">null</span>
+  &amp;&amp; msg.sender != node
+  &amp;&amp; !longLinks.<span class="fn">contains</span>(msg.sender)
+  &amp;&amp; longLinks.<span class="fn">size</span>() &lt; <span class="nl">5</span>) {
+    longLinks.<span class="fn">add</span>(msg.sender);
+}</pre>
+        </div>
+
+        <div class="code-wrap">
+          <div class="code-head">
+            <div class="dots"><span class="dr"></span><span class="dy"></span><span class="dg"></span></div>
+            <span>handleRouting() — sélection du meilleur saut</span>
+          </div>
+          <pre>Node best = <span class="kw">this</span>.succ;
+<span class="kw">long</span> bestDist = <span class="fn">dist</span>(<span class="kw">this</span>.id, targetId);
+
+<span class="kw">for</span> (Node link : longLinks) {
+  <span class="kw">long</span> d = <span class="fn">dist</span>(link.id, targetId);
+  <span class="kw">if</span> (d &lt; bestDist) {
+    bestDist = d; best = link;
+  }
+}
+<span class="cmt">// Tag console pour prouver le raccourci</span>
+log(best == succ ? <span class="str">"[FORWARD]"</span> : <span class="str">"[SHORTCUT]"</span>);
+EDSimulator.<span class="fn">add</span>(<span class="nl">1</span>, msg, best, pid);</pre>
+        </div>
+      </div>
+
+      <div>
+        <h3>Approche rejetée : Vue globale ("tricher")</h3>
+        <div class="card" style="border-color:var(--red);margin-bottom:.75rem">
+          <h4 style="color:var(--red)">✗ Network.get(random)</h4>
+          <p>Piocher des nœuds depuis la classe globale <code>Network</code> brise l'aspect distribué
+            — un vrai nœud n'a pas de vue globale du réseau.</p>
+        </div>
+
+        <h3>Impact sur les performances</h3>
+        <div class="chart-wrap">
+          <canvas id="c" height="200"></canvas>
+        </div>
+
+        <div class="g2" style="gap:.5rem;margin-top:.5rem">
+          <div class="stat">
+            <div class="n" style="color:var(--red);font-size:1.5rem">O(N)</div>
+            <div class="l">Anneau simple</div>
+          </div>
+          <div class="stat">
+            <div class="n" style="color:var(--green);font-size:1.5rem">O(log N)</div>
+            <div class="l">Avec piggybacking</div>
+          </div>
+        </div>
+
+        <div class="warn box" style="margin-top:.75rem">
+          <strong>Note :</strong> La distance utilise |id1−id2|.
+          La version exacte serait <code>(id2−id1) mod MAX</code> pour respecter la circularité.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════ 6. DÉMO -->
+  <div class="slide" id="demo">
+    <div class="tag">Démonstration</div>
+    <h2>Lancer le projet</h2>
+
+    <div class="g2">
+      <div>
+        <h3>Configuration (conf/config.cfg)</h3>
+        <div class="code-wrap">
+          <div class="code-head">
+            <div class="dots"><span class="dr"></span><span class="dy"></span><span class="dg"></span></div>
+            <span>config.cfg</span>
+          </div>
+          <pre>random.seed       <span class="nl">1234567890</span>
+simulation.endtime <span class="nl">1000</span>
+network.size       <span class="nl">10</span>
+
+protocol.dht  dht.<span class="cls">DHTNode</span>
+init.0        dht.<span class="cls">CustomInitializer</span>
+init.0.protocol dht
+control.obs   dht.<span class="cls">RingObserver</span>
+control.obs.step <span class="nl">200</span></pre>
+        </div>
+
+        <h3>Lancement (Eclipse)</h3>
+        <p style="margin-bottom:.4rem;font-size:.85rem">Classe principale : <code>peersim.Simulator</code></p>
+        <div class="demo-cmd">Argument : conf/config.cfg</div>
+
+        <h3>Scénario automatique</h3>
+        <table style="font-size:.8rem">
+          <thead>
+            <tr>
+              <th>Temps</th>
+              <th>Événement</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>T = 0–90</td>
+              <td>Joins des 9 nœuds (décalés de 10)</td>
+            </tr>
+            <tr>
+              <td>T = 300</td>
+              <td>Node 5 quitte proprement</td>
+            </tr>
+            <tr>
+              <td>T = 400</td>
+              <td>Node 2 route "Hello Routing" → Node 7</td>
+            </tr>
+            <tr>
+              <td>T = 500</td>
+              <td>Node 1 stocke "Mon super projet M1"</td>
+            </tr>
+            <tr>
+              <td>T = 600</td>
+              <td>Node 1 récupère la donnée (GET)</td>
+            </tr>
+            <tr>
+              <td>T = 200/400/600…</td>
+              <td>RingObserver — snapshot anneau</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div>
+        <h3>Sortie console attendue</h3>
+        <div class="demo-out">
+          <span class="hi3">Node 0 (Contact Node) initialized with ID 7382910...</span>
+          Scheduling Join for Node ID 2941830... via Node 0
+          <span class="hi">Node 2941830 successfully joined! Pred=7382910, Succ=7382910</span>
+          Scheduling Join for Node ID 5512044...
+          <span class="hi">Node 5512044 successfully joined! Pred=2941830, Succ=7382910</span>
+          ...
+
+          <span class="hi3">--- State of the ring --- (T=200)</span>
+          Node 1023... → Pred: 812... | Succ: 2941...
+          Node 2941... → Pred: 1023... | Succ: 5512...
+          <span class="hi3">Total nodes in ring: 10</span>
+
+          <span class="hi2">*** EVENT: Node 5512... is leaving! ***</span>
+
+          <span class="hi3">--- State of the ring --- (T=400)</span>
+          <span class="hi3">Total nodes in ring: 9 ✓</span>
+
+          [FORWARD] Node 2941... passe le relai au Node 5100...
+          [FORWARD] Node 5100... passe le relai au Node 7382...
+          [SHORTCUT] Node 7382... → 9201...
+          <span class="hi">>>> DELIVER: Node 9201... received: [Hello Routing]</span>
+
+          <span class="hi2">>>> STORAGE (PUT): Node 8800... storing [Mon super projet M1]</span>
+          <span class="hi2">>>> STORAGE (GET): Node 8800... handling GET for key 4491...</span>
+          <span class="hi">
+            <<< RECEIVED REPLY: "Mon super projet M1" </span>
+        </div>
+
+        <div class="box" style="margin-top:.75rem">
+          Les tags <strong>[FORWARD]</strong> et <strong>[SHORTCUT]</strong> prouvent
+          que le piggybacking est actif — le nœud choisit un raccourci au lieu du successeur direct.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <footer>DHT sur PeerSim · Rahou Zakaria &amp; Abidi Amine · M1 Informatique · 2025</footer>
+
+  <script>
+    (function () {
+      const canvas = document.getElementById('c');
+      if (!canvas) return;
+      const W = canvas.parentElement.clientWidth - 32;
+      const H = 200;
+      canvas.width = W; canvas.height = H;
+      const ctx = canvas.getContext('2d');
+      const pad = { t: 20, r: 20, b: 36, l: 44 };
+      const pw = W - pad.l - pad.r, ph = H - pad.t - pad.b;
+      const sizes = [10, 20, 50, 100, 200, 500, 1000];
+      const basic = sizes.map(n => n / 2);
+      const piggy = sizes.map(n => Math.max(2, Math.round(Math.log2(n) * 1.6)));
+      const maxY = Math.max(...basic);
+      const px = x => pad.l + (Math.log(x) / Math.log(1000)) * pw;
+      const py = y => pad.t + ph - (y / maxY) * ph;
+
+      ctx.fillStyle = '#161b22'; ctx.fillRect(0, 0, W, H);
+      ctx.strokeStyle = '#21262d'; ctx.lineWidth = 1;
+      [100, 200, 300, 400, 500].forEach(y => {
+        if (y > maxY) return;
+        ctx.beginPath(); ctx.moveTo(pad.l, py(y)); ctx.lineTo(pad.l + pw, py(y)); ctx.stroke();
+        ctx.fillStyle = '#8b949e'; ctx.font = '10px monospace'; ctx.textAlign = 'right';
+        ctx.fillText(y, pad.l - 4, py(y) + 3);
+      });
+      sizes.forEach(x => {
+        ctx.fillStyle = '#8b949e'; ctx.font = '10px monospace'; ctx.textAlign = 'center';
+        ctx.fillText(x, px(x), pad.t + ph + 18);
+      });
+      ctx.strokeStyle = '#30363d'; ctx.lineWidth = 1.5;
+      ctx.beginPath(); ctx.moveTo(pad.l, pad.t); ctx.lineTo(pad.l, pad.t + ph); ctx.lineTo(pad.l + pw, pad.t + ph); ctx.stroke();
+
+      function line(data, color, dashed) {
+        ctx.save(); ctx.strokeStyle = color; ctx.lineWidth = 2; ctx.lineJoin = 'round';
+        if (dashed) ctx.setLineDash([5, 3]);
+        ctx.beginPath();
+        sizes.forEach((x, i) => { i === 0 ? ctx.moveTo(px(x), py(data[i])) : ctx.lineTo(px(x), py(data[i])); });
+        ctx.stroke(); ctx.setLineDash([]);
+        ctx.fillStyle = color;
+        sizes.forEach((x, i) => { ctx.beginPath(); ctx.arc(px(x), py(data[i]), 3, 0, Math.PI * 2); ctx.fill(); });
+        ctx.restore();
+      }
+      line(basic, '#f85149', true);
+      line(piggy, '#3fb950', false);
+
+      // Legend
+      ctx.fillStyle = '#f85149'; ctx.font = '10px sans-serif'; ctx.textAlign = 'left';
+      ctx.beginPath(); ctx.rect(pad.l + 4, pad.t + 4, 16, 2); ctx.fill();
+      ctx.fillText('O(N) anneau', pad.l + 24, pad.t + 8);
+      ctx.fillStyle = '#3fb950';
+      ctx.beginPath(); ctx.rect(pad.l + 4, pad.t + 18, 16, 2); ctx.fill();
+      ctx.fillText('O(log N) piggybacking', pad.l + 24, pad.t + 22);
+
+      ctx.fillStyle = '#8b949e'; ctx.font = '10px sans-serif'; ctx.textAlign = 'center';
+      ctx.fillText('Taille réseau N', pad.l + pw / 2, H - 4);
+    })();
+  </script>
+</body>
+
+</html>
