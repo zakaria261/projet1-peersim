@@ -434,6 +434,56 @@
         font-size: .75rem
       }
     }
+
+    /* ═══ IMPRESSION / EXPORT PDF ═══ */
+    @media print {
+      /* Force la conservation des couleurs de fond */
+      *,
+      *::before,
+      *::after {
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+        color-adjust: exact !important;
+      }
+
+      /* Masquer la nav fixe à l'impression */
+      nav {
+        display: none !important;
+      }
+
+      /* Retirer le padding-top réservé à la nav */
+      .slide {
+        padding-top: 2rem !important;
+        min-height: unset !important;
+        page-break-inside: avoid;
+      }
+
+      /* Chaque slide sur sa propre page */
+      .slide + .slide {
+        page-break-before: always;
+      }
+
+      /* Forcer le fond sombre du body */
+      html, body {
+        background: #0d1117 !important;
+        color: #e6edf3 !important;
+      }
+
+      /* Éviter les coupures dans les blocs de code et les cards */
+      .code-wrap,
+      .card,
+      .stat,
+      .box,
+      .flow {
+        page-break-inside: avoid;
+      }
+
+      /* Slide titre : hauteur auto à l'impression */
+      #titre {
+        min-height: unset !important;
+        padding: 3rem 2rem !important;
+      }
+    }
   </style>
 </head>
 
